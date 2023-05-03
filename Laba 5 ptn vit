@@ -1,0 +1,62 @@
+rom flask import Flask, render_template, request
+import psycopg2
+
+app = Flask(name)
+
+conn = psycopg2.connect(database="lab4",
+                        user="postgres",
+                        password="RCX1337FUW",
+                        host="localhost",
+                        port="5432")
+
+cursor = conn.cursor()
+
+
+@app.route("/", methods=['GET'])
+def index():
+    return render_template('login.html')
+
+
+@app.route('/', methods=['POST'])
+def login():
+    username = request.form.get('username')
+    password = request.form.get('password')
+    if not username or not password:
+        return render_template('account.html', no_data=True)
+
+    try:
+        cursor.execute("SELECT * FROM service.users WHERE login=%s AND password=%s", (str(username), str(password)))
+        records = list(cursor.fetchall())
+        if not records:
+            raise ValueError("User not found")
+    except psycopg2.Error:
+        return render_template('account.html', error=True)
+
+    return render_template('account.html', full_name=records[0][1], login=records[0][2], password=records[0][3])
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    {% if error %}
+    <p>Sorry, an error occurred while processing your request. Please try again later.</p>
+    {% endif %}
+
+    <form action="" method="post">
+        {% if full_name %}
+        <p>Hello, {{full_name}}! </p>
+        <p>Your login - {{login}} </p>
+        <p>Your password - {{password}} </p>
+        {% endif %}
+        {% if no_data %}
+        <p>Please enter data.</p>
+        {% endif %}
+        {% if nepravilno %}
+        <p>User not found.</p>
+        {% endif %}
+    </form>
+</body>
+</html>
+
